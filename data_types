@@ -1,0 +1,69 @@
+#!/usr/bin/perl -w 
+use strict;
+use lib ('/home/mcampbell/lib');
+use PostData;
+
+#-----------------------------------------------------------------------------
+#----------------------------------- MAIN ------------------------------------
+#-----------------------------------------------------------------------------
+my $s = 0; 
+
+my @stuff = ('fig', $s);
+
+my %crap = ('tree' => 'fig', 'dog' => 'lab');
+
+
+#foreach my $v (@stuff){
+#	print $v."\n";
+#}
+
+
+
+
+#for (my $i = 0; $i < @stuff; $i++){
+#	print "Element:$i"." is ".$stuff[$i]."\n";
+#}
+
+
+#PostData(\@stuff);
+
+#PostData(\%crap);
+
+
+
+#while (defined(my $v = shift @stuff)){	
+#	print "V:$v\n";			
+#}                                        
+
+#PostData (\@stuff);
+
+#my $m = preservation(@stuff);
+#        print "$m\n";			
+#
+#my $n = preservation(@stuff);
+#        print "$n\n";			
+#
+#PostData (\@stuff);
+
+
+
+foreach my $key (sort keys %crap){
+	print "KEY:$key"." VALUE:".$crap{$key}."\n";
+
+}
+
+
+#-----------------------------------------------------------------------------
+#---------------------------------- SUBS -------------------------------------
+#-----------------------------------------------------------------------------
+
+sub preservation{
+    while (defined(my $v = shift @_)){	
+	return "$v";
+}			
+}                                       
+
+
+
+#-----------------------------------------------------------------------------
+

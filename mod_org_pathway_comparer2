@@ -1,0 +1,218 @@
+#!/usr/bin/perl -w 
+$|=1;
+use strict;
+use Getopt::Std;
+use vars qw($opt_r);
+getopts('r');
+
+use lib ('/home/mcampbell/lib');
+use PostData;
+
+#-----------------------------------------------------------------------------
+#----------------------------------- MAIN ------------------------------------
+#-----------------------------------------------------------------------------
+
+my $usage = "\n\nmod_org_pathway_comparer: compares orthologue coverage in pathways\n\n
+OPTIONS: -r <report on degree of conservation>\n
+USAGE: mod_org_pathway_comparer <Celg_pathwycoverage file> <Dmel_pathwycoverage file> 
+<Mmus_pathwycoverage file> <Scer_pathwycoverage file> <Smed_pathwycoverage file>\n\n";
+
+
+die($usage) unless $ARGV[4];
+
+my $file_c = $ARGV[0];
+my $file_d = $ARGV[1];
+my $file_m = $ARGV[2];
+my $file_y = $ARGV[3];
+my $file_p = $ARGV[4];
+
+#my %INDX;
+my %DATA;
+#my %PATH;
+
+parse('c', $file_c);
+parse('d', $file_d);
+parse('m', $file_m);
+parse('y', $file_y);
+parse('p', $file_p);
+
+report();
+#PostData(\%DATA);
+#show();
+#-----------------------------------------------------------------------------
+#---------------------------------- SUBS -------------------------------------
+#-----------------------------------------------------------------------------
+sub show {
+
+    
+    foreach my $key1 (keys %DATA){
+	print $key1.':'."\n";
+	foreach my $key2 (keys %{$DATA{$key1}}){
+	    print "\t".$key2.':'.$DATA{$key1}{$key2}."\n";
+		
+	    }
+      }
+}
+
+
+
+#-----------------------------------------------------------------------------
+sub report {
+    
+    my @allkeys = keys (%DATA);
+    #my @lcallkeys = sort { lc{$a} cmp lc{$b} } @allkeys;
+        foreach my $thekey (sort @allkeys) {
+	  print $thekey . "\n";
+	  my @gmod = sort { $DATA{$thekey}{$b} <=> $DATA{$thekey}{$a} } 
+                     keys %{$DATA{$thekey}};
+	       foreach my $modkey (@gmod) {
+		   print "\t$modkey Frac: \t$DATA{$thekey}{$modkey}\n";
+
+             }
+       }
+}
+#-----------------------------------------------------------------------------
+sub parse {
+	my $arg  = shift;
+	my $file = shift;
+
+	     	parse_c($file) if $arg eq 'c';
+		parse_d($file) if $arg eq 'd';
+		parse_m($file) if $arg eq 'm';
+		parse_y($file) if $arg eq 'y';
+		parse_p($file) if $arg eq 'p';
+
+}
+
+#-----------------------------------------------------------------------------
+sub super_parse {
+    
+    my $arg  = shift;
+    my $file = shift;
+    
+	open (my $FH, '<', $file) || die "Cant\'t find $file\n";
+
+	my @pathway = <$FH>;
+        my @datalines = grep(/.*num_genes:\d+/, @pathway);
+
+        foreach my $line (@datalines){
+	    my ($i, $f) = split(/Frac:/, $line);
+
+
+
+	    #$DATA{$i}{$arg} = $f;
+
+            if ($arg eq 'c'){
+	    	$DATA{$i}{celg} = $f;
+	    }
+            elsif ($arg eq 'd'){
+	    	$DATA{$i}{dmel} = $f;
+	    }
+            elsif ($arg eq 'm'){
+	    	$DATA{$i}{mmus} = $f;
+            }
+	    elsif ($arg eq 'y'){
+	    	$DATA{$i}{scer} = $f;
+	    }
+	    elsif ($arg eq 'p'){
+	    	$DATA{$i}{smed} = $f;
+
+	    }
+	    else {
+		die "unknown ARG:$arg in sub super_parse!\n";
+	    }
+        }
+    close($FH)
+}
+#-----------------------------------------------------------------------------
+sub parse_c {
+    
+    my $file = shift;
+    
+	open (my $FH, '<', $file) || die "Cant\'t find $file\n";
+
+	my @pathway = <$FH>;
+        my @datalines = grep(/.*num_genes:\d+/, @pathway);
+
+        foreach my $line (@datalines){
+	    my ($i, $f) = split(/Frac:/, $line);
+	    $DATA{$i}{celg} = $f;
+
+        }
+    close($FH)
+}
+#-----------------------------------------------------------------------------
+sub parse_d {
+
+   my $file = shift;
+    
+	open (my $FH, '<', $file) || die "Cant\'t find $file\n";
+
+	my @pathway = <$FH>;
+        my @datalines = grep(/.*num_genes:\d+/, @pathway);
+
+        foreach my $line (@datalines){
+	    my ($i, $f) = split(/Frac:/, $line);
+	    $DATA{$i}{dmel} = $f;
+
+
+
+        }
+    close($FH)
+
+}
+#-----------------------------------------------------------------------------
+sub parse_m {
+
+   my $file = shift;
+    
+	open (my $FH, '<', $file) || die "Cant\'t find $file\n";
+
+	my @pathway = <$FH>;
+        my @datalines = grep(/.*num_genes:\d+/, @pathway);
+
+        foreach my $line (@datalines){
+	    my ($i, $f) = split(/Frac:/, $line);
+	    $DATA{$i}{mmus} = $f;
+
+        }
+    close($FH)
+
+}
+#-----------------------------------------------------------------------------
+sub parse_y {
+
+   my $file = shift;
+    
+	open (my $FH, '<', $file) || die "Cant\'t find $file\n";
+
+	my @pathway = <$FH>;
+        my @datalines = grep(/.*num_genes:\d+/, @pathway);
+
+        foreach my $line (@datalines){
+	    my ($i, $f) = split(/Frac:/, $line);
+	    $DATA{$i}{scer} = $f;
+
+        }
+    close($FH)
+
+}
+#-----------------------------------------------------------------------------
+sub parse_p {
+
+   my $file = shift;
+    
+	open (my $FH, '<', $file) || die "Cant\'t find $file\n";
+
+	my @pathway = <$FH>;
+        my @datalines = grep(/.*num_genes:\d+/, @pathway);
+
+        foreach my $line (@datalines){
+	    my ($i, $f) = split(/Frac:/, $line);
+	    $DATA{$i}{smed} = $f;
+
+        }
+    close($FH)
+
+}
+#-----------------------------------------------------------------------------

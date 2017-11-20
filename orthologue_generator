@@ -1,0 +1,109 @@
+#!/usr/bin/perl -w 
+$|=1;
+use strict;
+use Getopt::Std;
+use vars qw($opt_r);
+getopts('r');
+
+use lib ('/home/mcampbell/lib');
+use PostData;
+
+#-----------------------------------------------------------------------------
+#----------------------------------- MAIN ------------------------------------
+#-----------------------------------------------------------------------------
+
+my $usage = "\n\northologue generator: compares recriprocal blast output files\n\n
+USAGE:   orthologue_generator <human to model> <model to human>\n
+EXAMPLE: orthologue_generator fileA fileB \n\n";
+
+die($usage) unless $ARGV[1];
+
+my $file_b = $ARGV[0];
+my $file_r = $ARGV[1];
+
+my %INDX;
+my %DATA;
+my %PATH;
+
+parse('b', $file_b);
+parse('r', $file_r);
+
+#PostData(\%DATA);
+show();
+#-----------------------------------------------------------------------------
+#---------------------------------- SUBS -------------------------------------
+#-----------------------------------------------------------------------------
+sub parse {
+	my $arg  = shift;
+	my $file = shift;
+
+	open (my $FH, '<', $file) || die "Cant\'t find $file\n";
+
+
+	while (defined(my $line = <$FH>)){
+
+        	chomp($line);
+
+        	parse_b($line) if $arg eq 'b';
+		parse_r($line) if $arg eq 'r';
+	}
+
+	close($FH);
+
+}
+#-----------------------------------------------------------------------------
+sub parse_b {
+	my $line = shift;
+
+	my @stuff = split("\t",$line);
+	
+	die $line unless @stuff == 22;
+	my $h = $stuff[0];
+	my $s = $stuff[1];
+	#print $n . "\n";
+
+	push(@{$DATA{all_h_hit_by_s}{$s}},$h);
+}
+
+#-----------------------------------------------------------------------------
+sub parse_r {
+	my $line = shift;
+
+	my @stuff = split("\t",$line);
+	
+	die $line unless @stuff == 22;
+	my $s = $stuff[0];
+	my $h = $stuff[1];
+
+	$DATA{best_h_for_s}{$s}{$h}++;
+
+}
+#-----------------------------------------------------------------------------
+sub check {
+	my $s = shift;
+
+	my @hs = @{$DATA{all_h_hit_by_s}{$s}};
+
+	my $check = 0;
+	foreach my $h (@hs){
+		$check++ if exists $DATA{best_h_for_s}{$s}{$h};	
+	}	
+
+	return $check;
+}
+#-----------------------------------------------------------------------------
+sub show {
+  
+	foreach my $s (keys %{$DATA{all_h_hit_by_s}}){
+		my @hs = @{$DATA{all_h_hit_by_s}{$s}};
+		
+		next unless check($s);
+
+		foreach my $h (@hs){
+			print $h."\t".$s."\n";
+		}
+	} 
+
+}
+#-----------------------------------------------------------------------------
+

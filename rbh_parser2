@@ -1,0 +1,108 @@
+#!/usr/bin/perl -w 
+use strict;
+use lib ('/home/mcampbell/lib');
+use PostData;
+
+#-----------------------------------------------------------------------------
+#----------------------------------- MAIN ------------------------------------
+#-----------------------------------------------------------------------------
+
+my $usage = "\n\nrbh_parser: parses a reciprical best hits file\n\n
+USAGE: rbh_parser <file>\n\n";
+
+die($usage) unless $ARGV[0];
+
+my $file = $ARGV[0];
+
+open (my $FH, '<', $file) || die "Cant\'t find $file\n";
+
+
+my $i = 0;
+
+my %DATA;
+
+while (defined(my $line = <$FH>)){
+
+	chomp($line);
+
+	if ($line =~ /masked/){
+	        if ($line =~ /maker.*augustus/){
+                	$DATA{masked}{maker}{aug}++;
+        	}
+        	elsif ($line =~ /maker.*snap/){
+                	$DATA{masked}{maker}{snp}++;
+		}
+		elsif ($line =~ /augustus.*abinit/){
+			$DATA{masked}{abinit}{aug}++;
+		}
+                elsif ($line =~ /snap.*abinit/){
+                        $DATA{masked}{abinit}{snp}++;
+                }
+		else {
+			die "WTF1\n";
+		}
+	}
+	else {
+                if ($line =~ /maker.*augustus/){
+                        $DATA{un_masked}{maker}{aug}++;
+                }
+                elsif ($line =~ /maker.*snap/){
+                        $DATA{un_masked}{maker}{snp}++;
+                }
+                elsif ($line =~ /augustus.*abinit/){
+                        $DATA{un_masked}{abinit}{aug}++;
+                }
+                elsif ($line =~ /snap.*abinit/){
+                        $DATA{un_masked}{abinit}{snp}++;
+                } 
+		else {
+			die "WTF2\n";
+	        }
+		
+	}
+
+	$i++;
+}
+
+close($FH);
+
+check($i);
+
+show();
+
+#-----------------------------------------------------------------------------
+#---------------------------------- SUBS -------------------------------------
+#-----------------------------------------------------------------------------
+sub check {
+	my $lc = shift @_;
+
+
+	my $total = 0;
+	foreach my $key1 (keys %DATA){
+		foreach my $key2 (keys %{$DATA{$key1}}){
+			foreach my $key3 (keys %{$DATA{$key1}{$key2}}){
+				$total += $DATA{$key1}{$key2}{$key3}; 
+			}
+		}
+	} 
+
+	die "LC:$lc TOTAL:$total\n" if $lc != $total;
+}
+#-----------------------------------------------------------------------------
+sub show {
+
+        my $total = 0;
+        foreach my $key1 (keys %DATA){
+		print $key1.':'."\n";
+                foreach my $key2 (keys %{$DATA{$key1}}){
+			print "\t".$key2.':'."\n";
+                        foreach my $key3 (keys %{$DATA{$key1}{$key2}}){
+				my $v = $DATA{$key1}{$key2}{$key3};
+				print "\t\t".$key3.':'.$v."\n";
+                                $total += $v;
+                        }
+                }
+        }
+	print "TOTAL:$total\n";
+}
+#-----------------------------------------------------------------------------

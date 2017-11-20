@@ -1,0 +1,66 @@
+#!/usr/bin/perl -w 
+use strict;
+use lib ('/home/mcampbell/lib');
+use PostData;
+
+#-----------------------------------------------------------------------------
+#----------------------------------- MAIN ------------------------------------
+#-----------------------------------------------------------------------------
+
+my $usage = "\n\nrbh_parser: parses a reciprical best hits file\n\n
+USAGE: rbh_parser <file>\n\n";
+
+die($usage) unless $ARGV[0];
+
+my $file = $ARGV[0];
+
+open (my $FH, '<', $file) || die "Cant\'t find $file\n";
+
+
+my $i = 0;
+
+my $aug = 0;
+my $snp = 0;
+my $mkr = 0;
+my $smkr = 0;
+my $amkr = 0;
+
+while (defined(my $line = <$FH>)){
+
+	chomp($line);
+
+	$aug++ if $line =~ /augustus.*abinit/;
+
+	$snp++ if $line =~ /snap.*abinit/;
+
+	$mkr++ if $line =~ /maker/;
+
+	$amkr++ if $line =~ /(maker.*augustus)/;
+
+	$smkr++ if $line =~ /(maker.*snap)/;
+
+	$i++;
+}
+
+print "\ntotal:$i\n\n augustus_abinit:$aug\n snap_abinit:$snp\n maker:$mkr\n";
+print " maker_from_snap:$smkr\n maker_from_augustus:$amkr\n";
+
+my $aug_only = ($aug - $amkr);
+print "\n aug_only:$aug_only\n";
+
+my $snp_only = ($snp - $smkr);
+print " snp_only:$snp_only\n\n";
+
+#my $total_mkr_w_evidence = ($smkr + $amkr);
+#    print "total_mkr_w_evidence:$total_mkr_w_evidence\n\n";
+
+close($FH);
+
+
+#-----------------------------------------------------------------------------
+#---------------------------------- SUBS -------------------------------------
+#-----------------------------------------------------------------------------
+
+
+#-----------------------------------------------------------------------------
+

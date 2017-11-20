@@ -1,0 +1,170 @@
+#!/usr/bin/perl -w 
+$|=1;
+use strict;
+use Getopt::Std;
+use vars qw($opt_r);
+getopts('r');
+
+use lib ('/home/mcampbell/lib');
+use PostData;
+
+#-----------------------------------------------------------------------------
+#----------------------------------- MAIN ------------------------------------
+#-----------------------------------------------------------------------------
+
+my $usage = "\n\npathway_parser: parses reactome pathway & RBH files\n\n
+OPTIONS: -r <report on degree of conservation>\n
+USAGE:   pathway_parser <pathway file> <rbh file>\n
+EXAMPLE: pathway_parser -r fileA fileB \n\n";
+
+die($usage) unless $ARGV[1] && $opt_r;
+
+my $file_p = $ARGV[0];
+my $file_h = $ARGV[1];
+
+my %INDX;
+my %DATA;
+my %PATH;
+
+parse('p', $file_p);
+parse('h', $file_h);
+
+load();
+
+my $x = keys %DATA;
+
+undef %DATA;
+
+my $TOTAL_H    = 0;
+my $TOTAL_S    = 0;
+
+add_meta();
+
+print "TOTAL_H:$TOTAL_H TOTAL_S:$TOTAL_S FRAC:".$TOTAL_S/$TOTAL_H."\n";
+report() if $opt_r;
+
+#-----------------------------------------------------------------------------
+#---------------------------------- SUBS -------------------------------------
+#-----------------------------------------------------------------------------
+sub add_meta {
+	foreach my $p (keys %PATH){
+                my $total_this_pathway = 0;
+                my $smed_this_pathway  = 0;
+                foreach my $pair (@{$PATH{$p}{ids}}){
+                        $total_this_pathway++;
+                        my ($h, $s) = @{$pair};
+
+                        $smed_this_pathway++ if defined($s);
+			$TOTAL_S++ if defined($s);
+			$TOTAL_H++;		
+
+                }       
+                my $frac = $smed_this_pathway/$total_this_pathway;
+
+		$PATH{$p}{frac} = $frac;
+		$PATH{$p}{size} = $total_this_pathway;
+	}
+}
+#-----------------------------------------------------------------------------
+sub meta_sort {
+	$PATH{$b}{frac} <=> $PATH{$a}{frac}
+			||
+        $PATH{$b}{size} <=> $PATH{$a}{size};
+}
+#-----------------------------------------------------------------------------
+sub report {
+
+	
+	foreach my $p (sort meta_sort keys %PATH){
+		my $size = $PATH{$p}{size};
+		my $frac = $PATH{$p}{frac};
+
+		print $p." num_genes:$size Frac:$frac\n";
+
+		foreach my $pair (@{$PATH{$p}{ids}}){
+			my ($h, $s) = @{$pair};
+
+			$s = 'NONE' unless defined $s;
+
+			print "\t HSAP:$h SMED:$s\n";	
+		}	
+
+	}
+}
+#-----------------------------------------------------------------------------
+sub load {
+	foreach my $p (keys %DATA){
+		foreach my $id (@{$DATA{$p}}){
+			if (defined($INDX{H_to_S}{$id})){
+				my $smed = $INDX{H_to_S}{$id};
+
+				push(@{$PATH{$p}{ids}}, [$id, $smed]);
+			}
+			else {
+				push(@{$PATH{$p}{ids}}, [$id]);
+			}
+		}
+	}
+}
+#-----------------------------------------------------------------------------
+sub parse {
+	my $arg  = shift;
+	my $file = shift;
+
+	open (my $FH, '<', $file) || die "Cant\'t find $file\n";
+
+
+	while (defined(my $line = <$FH>)){
+
+        	chomp($line);
+
+        	parse_p($line) if $arg eq 'p';
+		parse_h($line) if $arg eq 'h';
+	}
+
+	close($FH);
+
+}
+#-----------------------------------------------------------------------------
+sub parse_h {
+	my $line = shift;
+
+	my ($hsap, $smed) = split(/\s+/, $line);
+
+	my ($x, $y, $z ) = split(/\|/, $hsap);
+
+	$INDX{H_to_S}{$y} = $smed;
+
+	$INDX{S_to_H}{$smed} = $y;
+
+}
+#-----------------------------------------------------------------------------
+sub parse_p {
+
+	my $line = shift;
+
+        my @stuff = split("\t",$line);
+
+        die $line unless @stuff == 4;
+
+
+	my @procs;
+	if ($stuff[2] =~ /\[\d+\s+processes\]/){
+		@procs = split(/\;\s*/, $stuff[2]);
+		$procs[0] =~ s/\[\d+\s+processes\]\:\s+//;
+	}
+	else {
+		push(@procs, $stuff[2]);
+	}
+
+	foreach my $proc (@procs){
+		push(@{$DATA{$proc}}, $stuff[0]);
+	}
+}
+#-----------------------------------------------------------------------------
+sub show {
+
+
+}
+#-----------------------------------------------------------------------------
+
